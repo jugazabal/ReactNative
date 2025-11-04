@@ -1,21 +1,30 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import Constants from 'expo-constants';
+import { StyleSheet, View } from 'react-native';
+import { Route, Routes, Navigate } from 'react-router-native';
 import RepositoryList from '../screens/RepositoryList';
+import AppBar from './AppBar';
+import SignIn from './SignIn';
+import theme from '../theme';
 
-const Stack = createNativeStackNavigator();
+const styles = StyleSheet.create({
+  container: {
+    marginTop: Constants.statusBarHeight,
+    backgroundColor: theme.colors.mainBackground,
+    flexGrow: 1,
+    flexShrink: 1,
+  },
+});
 
 const Main = () => {
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen 
-          name="Repositories" 
-          component={RepositoryList}
-          options={{ headerShown: false }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <View style={styles.container}>
+      <AppBar />
+      <Routes>
+        <Route path="/" element={<RepositoryList />} />
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </View>
   );
 };
 
