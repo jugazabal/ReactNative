@@ -1,14 +1,34 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
+import { setContext } from '@apollo/client/link/context';
+import { APOLLO_URI } from '@env';
 
-// For now, we'll use a placeholder URL since we don't have the actual backend endpoint
-// In a real application, this would be the URL to your GraphQL server
-const httpLink = createHttpLink({
-  uri: 'http://localhost:4000/graphql',
-});
+const createApolloClient = (authStorage) => {
+  // Fallback URI in case environment variable is not loaded
+  const uri = APOLLO_URI || 'http://172.31.220.197:4000/graphql';
+  
+  const httpLink = createHttpLink({
+    uri: uri,
+  });
 
-const createApolloClient = () => {
+  const authLink = setContext(async (_, { headers }) => {
+    try {
+      const accessToken = await authStorage.getAccessToken();
+      return {
+        headers: {
+          ...headers,
+          authorization: accessToken ? `Bearer ${accessToken}` : '',
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      return {
+        headers,
+      };
+    }
+  });
+
   return new ApolloClient({
-    link: httpLink,
+    link: authLink.concat(httpLink),
     cache: new InMemoryCache(),
     defaultOptions: {
       watchQuery: {

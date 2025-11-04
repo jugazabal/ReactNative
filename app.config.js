@@ -1,4 +1,6 @@
-{
+import 'react-native-dotenv';
+
+export default {
   "expo": {
     "name": "rate-repository-app",
     "slug": "rate-repository-app",
@@ -24,7 +26,13 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "build": {
+        "babel": {
+          "include": ["@apollo/client", "graphql"]
+        }
+      }
     }
   }
-}
+};

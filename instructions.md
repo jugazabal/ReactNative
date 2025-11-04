@@ -130,27 +130,35 @@ npm install --save-dev eslint @babel/eslint-parser eslint-plugin-react eslint-pl
 - [x] Initialize Expo application
 - [x] Set up development environment
 - [x] Configure ESLint
-- [ ] Set up project structure
+- [x] Set up project structure
 
 ### Phase 2: Core Components
-- [ ] Create basic navigation structure
-- [ ] Implement repository list view
-- [ ] Add repository item components
-- [ ] Style with React Native components
+- [x] Create basic navigation structure
+- [x] Implement repository list view
+- [x] Add repository item components
+- [x] Style with React Native components
 
-### Phase 3: Data Management
-- [ ] Set up GraphQL client
-- [ ] Implement repository data fetching
+### Phase 3: Server Communication Setup
+- [ ] Set up rate-repository-api server
+- [ ] Configure HTTP requests with Fetch API
+- [ ] Set up GraphQL and Apollo Client
+- [ ] Configure environment variables
+- [ ] Implement data storage (AsyncStorage)
+
+### Phase 4: Data Management
+- [ ] Replace mock data with server data
+- [ ] Implement repository data fetching with GraphQL
 - [ ] Add state management (Context/Redux)
 - [ ] Handle loading and error states
 
-### Phase 4: User Features
-- [ ] Implement user authentication
-- [ ] Add login/register forms
-- [ ] Create user profile management
-- [ ] Implement review functionality
+### Phase 5: User Authentication
+- [ ] Implement sign-in mutation
+- [ ] Store access tokens securely
+- [ ] Enhance Apollo Client with authentication
+- [ ] Implement sign-out functionality
+- [ ] Add user context management
 
-### Phase 5: Advanced Features
+### Phase 6: Advanced Features
 - [ ] Add sorting and filtering
 - [ ] Implement pagination
 - [ ] Add form validation
@@ -214,6 +222,554 @@ npm install --save-dev eslint @babel/eslint-parser eslint-plugin-react eslint-pl
 - [React Native Community](https://github.com/react-native-community)
 - [Expo Forums](https://forums.expo.dev/)
 - [Stack Overflow](https://stackoverflow.com/questions/tagged/react-native)
+
+## Server Communication Implementation
+
+### Phase 3 Detailed Steps: Server Communication Setup
+
+#### Step 1: Set Up Rate Repository API Server
+
+1. **Clone and Setup Server**
+```bash
+git clone https://github.com/fullstack-hy2020/rate-repository-api.git
+cd rate-repository-api
+npm install
+npm run build
+npm start
+```
+
+2. **Verify Server Access**
+- GraphQL Playground: http://localhost:4000
+- REST API endpoint: http://localhost:5000/api/repositories
+- Find your local IP address from Expo development tools
+
+#### Step 2: HTTP Requests with Fetch API
+
+1. **Basic Fetch Implementation**
+```javascript
+// Replace mock data in RepositoryList component
+import { useState, useEffect } from 'react';
+
+const RepositoryList = () => {
+  const [repositories, setRepositories] = useState();
+
+  const fetchRepositories = async () => {
+    // Replace IP address with your own!
+    const response = await fetch('http://192.168.1.33:5000/api/repositories');
+    const json = await response.json();
+    console.log(json);
+    setRepositories(json);
+  };
+
+  useEffect(() => {
+    fetchRepositories();
+  }, []);
+
+  const repositoryNodes = repositories
+    ? repositories.edges.map(edge => edge.node)
+    : [];
+
+  return (
+    <FlatList
+      data={repositoryNodes}
+      // Other props
+    />
+  );
+};
+```
+
+2. **Create useRepositories Hook**
+```javascript
+// src/hooks/useRepositories.js
+import { useState, useEffect } from 'react';
+
+const useRepositories = () => {
+  const [repositories, setRepositories] = useState();
+  const [loading, setLoading] = useState(false);
+
+  const fetchRepositories = async () => {
+    setLoading(true);
+    // Replace IP address with your own!
+    const response = await fetch('http://192.168.1.33:5000/api/repositories');
+    const json = await response.json();
+    setLoading(false);
+    setRepositories(json);
+  };
+
+  useEffect(() => {
+    fetchRepositories();
+  }, []);
+
+  return { repositories, loading, refetch: fetchRepositories };
+};
+
+export default useRepositories;
+```
+
+#### Step 3: GraphQL and Apollo Client Setup
+
+1. **Install Dependencies**
+```bash
+npm install @apollo/client graphql
+npm install @expo/metro-config@0.17.4
+```
+
+2. **Configure Metro Bundler**
+```javascript
+// metro.config.js
+const { getDefaultConfig } = require('@expo/metro-config');
+
+const defaultConfig = getDefaultConfig(__dirname);
+defaultConfig.resolver.sourceExts.push('cjs');
+
+module.exports = defaultConfig;
+```
+
+3. **Create Apollo Client**
+```javascript
+// src/utils/apolloClient.js
+import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
+import { setContext } from '@apollo/client/link/context';
+
+const httpLink = createHttpLink({
+  uri: 'http://192.168.1.100:4000/graphql', // Replace with your IP
+});
+
+const createApolloClient = (authStorage) => {
+  const authLink = setContext(async (_, { headers }) => {
+    try {
+      const accessToken = await authStorage.getAccessToken();
+      return {
+        headers: {
+          ...headers,
+          authorization: accessToken ? `Bearer ${accessToken}` : '',
+        },
+      };
+    } catch (e) {
+      console.log(e);
+      return { headers };
+    }
+  });
+
+  return new ApolloClient({
+    link: authLink.concat(httpLink),
+    cache: new InMemoryCache(),
+  });
+};
+
+export default createApolloClient;
+```
+
+4. **Setup Apollo Provider**
+```javascript
+// App.js
+import { NativeRouter } from 'react-router-native';
+import { ApolloProvider } from '@apollo/client';
+import Main from './src/components/Main';
+import createApolloClient from './src/utils/apolloClient';
+import AuthStorage from './src/utils/authStorage';
+
+const authStorage = new AuthStorage();
+const apolloClient = createApolloClient(authStorage);
+
+const App = () => {
+  return (
+    <NativeRouter>
+      <ApolloProvider client={apolloClient}>
+        <Main />
+      </ApolloProvider>
+    </NativeRouter>
+  );
+};
+
+export default App;
+```
+
+#### Step 4: GraphQL Queries and Organization
+
+1. **Create GraphQL Structure**
+```
+src/
+  graphql/
+    queries.js
+    mutations.js
+    fragments.js
+```
+
+2. **Define Queries**
+```javascript
+// src/graphql/queries.js
+import { gql } from '@apollo/client';
+
+export const GET_REPOSITORIES = gql`
+  query {
+    repositories {
+      edges {
+        node {
+          id
+          fullName
+          description
+          language
+          ownerAvatarUrl
+          stargazersCount
+          forksCount
+          reviewCount
+          ratingAverage
+        }
+      }
+    }
+  }
+`;
+
+export const GET_CURRENT_USER = gql`
+  query {
+    me {
+      id
+      username
+    }
+  }
+`;
+```
+
+3. **Define Mutations**
+```javascript
+// src/graphql/mutations.js
+import { gql } from '@apollo/client';
+
+export const AUTHENTICATE = gql`
+  mutation authenticate($credentials: AuthenticateInput) {
+    authenticate(credentials: $credentials) {
+      accessToken
+    }
+  }
+`;
+```
+
+4. **Update useRepositories Hook**
+```javascript
+// src/hooks/useRepositories.js
+import { useQuery } from '@apollo/client';
+import { GET_REPOSITORIES } from '../graphql/queries';
+
+const useRepositories = () => {
+  const { data, error, loading, refetch } = useQuery(GET_REPOSITORIES, {
+    fetchPolicy: 'cache-and-network',
+  });
+
+  return { 
+    repositories: data?.repositories, 
+    loading, 
+    refetch 
+  };
+};
+
+export default useRepositories;
+```
+
+#### Step 5: Environment Variables Configuration
+
+1. **Install Dotenv**
+```bash
+npm install dotenv
+```
+
+2. **Rename app.json to app.config.js**
+```javascript
+// app.config.js
+import 'dotenv/config';
+
+export default {
+  name: 'rate-repository-app',
+  slug: 'rate-repository-app',
+  version: '1.0.0',
+  orientation: 'portrait',
+  icon: './assets/icon.png',
+  userInterfaceStyle: 'light',
+  splash: {
+    image: './assets/splash.png',
+    resizeMode: 'contain',
+    backgroundColor: '#ffffff'
+  },
+  assetBundlePatterns: ['**/*'],
+  ios: {
+    supportsTablet: true
+  },
+  android: {
+    adaptiveIcon: {
+      foregroundImage: './assets/adaptive-icon.png',
+      backgroundColor: '#ffffff'
+    }
+  },
+  web: {
+    favicon: './assets/favicon.png'
+  },
+  extra: {
+    env: process.env.ENV,
+    apolloUri: process.env.APOLLO_URI,
+  },
+};
+```
+
+3. **Create .env File**
+```env
+ENV=development
+APOLLO_URI=http://192.168.1.100:4000/graphql
+```
+
+4. **Update Apollo Client**
+```javascript
+// src/utils/apolloClient.js
+import Constants from 'expo-constants';
+
+const { apolloUri } = Constants.expoConfig.extra;
+
+const httpLink = createHttpLink({
+  uri: apolloUri,
+});
+```
+
+#### Step 6: Data Storage with AsyncStorage
+
+1. **Install AsyncStorage**
+```bash
+npx expo install @react-native-async-storage/async-storage
+```
+
+2. **Create AuthStorage Class**
+```javascript
+// src/utils/authStorage.js
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+class AuthStorage {
+  constructor(namespace = 'auth') {
+    this.namespace = namespace;
+  }
+
+  async getAccessToken() {
+    const accessToken = await AsyncStorage.getItem(
+      `${this.namespace}:accessToken`,
+    );
+    return accessToken ? JSON.parse(accessToken) : null;
+  }
+
+  async setAccessToken(accessToken) {
+    await AsyncStorage.setItem(
+      `${this.namespace}:accessToken`,
+      JSON.stringify(accessToken),
+    );
+  }
+
+  async removeAccessToken() {
+    await AsyncStorage.removeItem(`${this.namespace}:accessToken`);
+  }
+}
+
+export default AuthStorage;
+```
+
+### Phase 5 Detailed Steps: User Authentication
+
+#### Step 1: Sign-in Mutation Implementation
+
+1. **Create useSignIn Hook**
+```javascript
+// src/hooks/useSignIn.js
+import { useMutation, useApolloClient } from '@apollo/client';
+import { AUTHENTICATE } from '../graphql/mutations';
+import useAuthStorage from './useAuthStorage';
+
+const useSignIn = () => {
+  const [mutate, result] = useMutation(AUTHENTICATE);
+  const authStorage = useAuthStorage();
+  const apolloClient = useApolloClient();
+
+  const signIn = async ({ username, password }) => {
+    const { data } = await mutate({
+      variables: { credentials: { username, password } }
+    });
+
+    if (data?.authenticate?.accessToken) {
+      await authStorage.setAccessToken(data.authenticate.accessToken);
+      apolloClient.resetStore();
+    }
+
+    return data;
+  };
+
+  return [signIn, result];
+};
+
+export default useSignIn;
+```
+
+2. **Update SignIn Component**
+```javascript
+// src/components/SignIn.jsx
+import { useNavigate } from 'react-router-native';
+import useSignIn from '../hooks/useSignIn';
+
+const SignIn = () => {
+  const [signIn] = useSignIn();
+  const navigate = useNavigate();
+
+  const onSubmit = async (values) => {
+    const { username, password } = values;
+
+    try {
+      const { data } = await signIn({ username, password });
+      console.log(data);
+      navigate('/');
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  // ... rest of component
+};
+```
+
+#### Step 2: Context for Dependency Injection
+
+1. **Create Auth Storage Context**
+```javascript
+// src/contexts/AuthStorageContext.js
+import { createContext } from 'react';
+
+const AuthStorageContext = createContext();
+
+export default AuthStorageContext;
+```
+
+2. **Create useAuthStorage Hook**
+```javascript
+// src/hooks/useAuthStorage.js
+import { useContext } from 'react';
+import AuthStorageContext from '../contexts/AuthStorageContext';
+
+const useAuthStorage = () => {
+  return useContext(AuthStorageContext);
+};
+
+export default useAuthStorage;
+```
+
+3. **Provide Context in App Component**
+```javascript
+// App.js
+import AuthStorageContext from './src/contexts/AuthStorageContext';
+
+const App = () => {
+  return (
+    <NativeRouter>
+      <ApolloProvider client={apolloClient}>
+        <AuthStorageContext.Provider value={authStorage}>
+          <Main />
+        </AuthStorageContext.Provider>
+      </ApolloProvider>
+    </NativeRouter>
+  );
+};
+```
+
+#### Step 3: Sign-out Implementation
+
+1. **Update AppBar Component**
+```javascript
+// src/components/AppBar.jsx
+import { useQuery, useApolloClient } from '@apollo/client';
+import { GET_CURRENT_USER } from '../graphql/queries';
+import useAuthStorage from '../hooks/useAuthStorage';
+
+const AppBar = () => {
+  const { data } = useQuery(GET_CURRENT_USER);
+  const apolloClient = useApolloClient();
+  const authStorage = useAuthStorage();
+
+  const signOut = async () => {
+    await authStorage.removeAccessToken();
+    apolloClient.resetStore();
+  };
+
+  return (
+    <View style={styles.container}>
+      <ScrollView horizontal>
+        <AppBarTab>Repositories</AppBarTab>
+        {data?.me ? (
+          <Pressable onPress={signOut}>
+            <AppBarTab>Sign out</AppBarTab>
+          </Pressable>
+        ) : (
+          <AppBarTab>Sign in</AppBarTab>
+        )}
+      </ScrollView>
+    </View>
+  );
+};
+```
+
+### Exercise Checklist
+
+#### Exercise 10.11: Fetching repositories with Apollo Client
+- [ ] Setup Apollo Sandbox and test repositories query
+- [ ] Replace Fetch API with GraphQL useQuery hook
+- [ ] Use cache-and-network fetch policy
+- [ ] Organize GraphQL queries in separate files
+
+#### Exercise 10.12: Environment variables
+- [ ] Create .env file with APOLLO_URI
+- [ ] Rename app.json to app.config.js
+- [ ] Configure environment variables access
+- [ ] Use environment variables in Apollo Client
+
+#### Exercise 10.13: Sign in form mutation
+- [ ] Test authenticate mutation in Apollo Sandbox
+- [ ] Create useSignIn hook with useMutation
+- [ ] Implement sign-in functionality in SignIn component
+- [ ] Log authentication result
+
+#### Exercise 10.14: Storing access token
+- [ ] Create AuthStorage class with AsyncStorage
+- [ ] Implement getAccessToken, setAccessToken, removeAccessToken methods
+- [ ] Use namespace for storage keys
+
+#### Exercise 10.15: Complete sign-in flow
+- [ ] Store access token after successful authentication
+- [ ] Reset Apollo Client store after sign-in
+- [ ] Redirect user to repositories list
+- [ ] Handle authentication errors
+
+#### Exercise 10.16: Sign out functionality
+- [ ] Use me query to check authentication status
+- [ ] Show "Sign out" tab for authenticated users
+- [ ] Implement sign-out with token removal
+- [ ] Reset Apollo Client store on sign-out
+
+### Key Implementation Notes
+
+1. **Network Configuration**
+   - Use your local IP address, not localhost, for device testing
+   - Ensure development machine and mobile device are on same Wi-Fi
+   - Consider using ngrok for tunnel setup if needed
+
+2. **Error Handling**
+   - Always implement try-catch blocks for async operations
+   - Log errors for debugging purposes
+   - Provide user-friendly error messages
+
+3. **Security Considerations**
+   - Never store sensitive data in configuration files
+   - Use SecureStore for highly sensitive data
+   - Implement proper token validation
+
+4. **Performance Optimization**
+   - Use appropriate fetch policies for GraphQL queries
+   - Implement loading states
+   - Consider pagination for large datasets
+
+5. **Development Workflow**
+   - Test queries in Apollo Sandbox first
+   - Use React DevTools for debugging
+   - Monitor network requests and responses
 
 ---
 

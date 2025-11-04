@@ -36,3 +36,13 @@ export const GET_REPOSITORY = gql`
     }
   }
 `;
+
+// Query to get current authenticated user
+export const GET_CURRENT_USER = gql`
+  query GetCurrentUser {
+    me {
+      id
+      username
+    }
+  }
+`;
