@@ -15,6 +15,7 @@ const mockRepositories = {
         ratingAverage: 88,
         reviewCount: 4,
         ownerAvatarUrl: 'https://avatars2.githubusercontent.com/u/4060187?v=4',
+        createdAt: '2020-07-04T10:00:00.000Z',
       },
     },
     {
@@ -28,6 +29,7 @@ const mockRepositories = {
         ratingAverage: 72,
         reviewCount: 3,
         ownerAvatarUrl: 'https://avatars1.githubusercontent.com/u/54310907?v=4',
+        createdAt: '2021-01-15T12:30:00.000Z',
       },
     },
     {
@@ -41,15 +43,81 @@ const mockRepositories = {
         ratingAverage: 74,
         reviewCount: 2,
         ownerAvatarUrl: 'https://avatars0.githubusercontent.com/u/4178044?v=4',
+        createdAt: '2019-10-20T08:45:00.000Z',
       },
     },
   ],
 };
 
-const useRepositories = () => {
+const filterAndSortMockRepositories = (
+  repositories,
+  { orderBy, orderDirection, searchKeyword },
+) => {
+  if (!repositories) {
+    return repositories;
+  }
+
+  const normalizedSearch = searchKeyword ? searchKeyword.toLowerCase() : undefined;
+
+  const filteredEdges = repositories.edges.filter(({ node }) => {
+    if (!normalizedSearch) {
+      return true;
+    }
+
+    const { fullName = '', description = '' } = node;
+    return (
+      fullName.toLowerCase().includes(normalizedSearch) ||
+      description.toLowerCase().includes(normalizedSearch)
+    );
+  });
+
+  const directionMultiplier = orderDirection === 'ASC' ? 1 : -1;
+
+  const sortedEdges = [...filteredEdges].sort((a, b) => {
+    const repoA = a.node;
+    const repoB = b.node;
+
+    let valueA = 0;
+    let valueB = 0;
+
+    if (orderBy === 'RATING_AVERAGE') {
+      valueA = repoA.ratingAverage ?? 0;
+      valueB = repoB.ratingAverage ?? 0;
+    } else {
+      valueA = repoA.createdAt ? new Date(repoA.createdAt).valueOf() : 0;
+      valueB = repoB.createdAt ? new Date(repoB.createdAt).valueOf() : 0;
+    }
+
+    if (valueA === valueB) {
+      return 0;
+    }
+
+    if (valueA > valueB) {
+      return directionMultiplier;
+    }
+
+    return -directionMultiplier;
+  });
+
+  return {
+    ...repositories,
+    edges: sortedEdges,
+  };
+};
+
+const useRepositories = (options = {}) => {
+  const { orderBy, orderDirection, searchKeyword } = options;
+
+  const variables = {
+    orderBy,
+    orderDirection,
+    searchKeyword,
+  };
+
   const { data, loading, error, refetch } = useQuery(GET_REPOSITORIES, {
     fetchPolicy: 'cache-and-network',
     errorPolicy: 'all', // Continue rendering even if there are GraphQL errors
+    variables,
   });
 
   // Use server data if available, otherwise fallback to mock data
@@ -59,7 +127,11 @@ const useRepositories = () => {
   } else if (error) {
     // If there's a GraphQL error (server unavailable), use mock data
     console.log('GraphQL server unavailable, using mock data:', error.message);
-    repositories = mockRepositories;
+    repositories = filterAndSortMockRepositories(mockRepositories, {
+      orderBy,
+      orderDirection,
+      searchKeyword,
+    });
   } else {
     repositories = undefined;
   }
@@ -67,7 +139,7 @@ const useRepositories = () => {
   return {
     repositories,
     loading,
-    refetch,
+    refetch: (args) => refetch({ ...variables, ...args }),
   };
 };
 

@@ -5,7 +5,6 @@ import Text from './Text';
 import theme from '../theme';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useSignOut } from '../hooks/useSignIn';
-import React from 'react';
 
 const styles = StyleSheet.create({
   container: {
@@ -22,14 +21,22 @@ const styles = StyleSheet.create({
   },
 });
 
-const AppBarTab = ({ children, to, ...props }) => {
-  return (
-    <Pressable style={styles.tab} {...props}>
-      <Link to={to}>
+const AppBarTab = ({ children, to, onPress, ...props }) => {
+  if (to) {
+    return (
+      <Link to={to} component={Pressable} style={styles.tab} {...props}>
         <Text fontWeight="bold" style={{ color: 'white' }}>
           {children}
         </Text>
       </Link>
+    );
+  }
+
+  return (
+    <Pressable style={styles.tab} onPress={onPress} {...props}>
+      <Text fontWeight="bold" style={{ color: 'white' }}>
+        {children}
+      </Text>
     </Pressable>
   );
 };
@@ -58,14 +65,14 @@ const AppBar = () => {
     <View style={styles.container}>
       <ScrollView horizontal style={styles.scrollView}>
         <AppBarTab to="/">Repositories</AppBarTab>
+        {currentUser ? <AppBarTab to="/create-review">Create a review</AppBarTab> : null}
         {currentUser ? (
-          <Pressable style={styles.tab} onPress={handleSignOut}>
-            <Text fontWeight="bold" style={{ color: 'white' }}>
-              Sign out
-            </Text>
-          </Pressable>
+          <AppBarTab onPress={handleSignOut}>Sign out</AppBarTab>
         ) : (
-          <AppBarTab to="/signin">Sign in</AppBarTab>
+          <>
+            <AppBarTab to="/signin">Sign in</AppBarTab>
+            <AppBarTab to="/signup">Sign up</AppBarTab>
+          </>
         )}
       </ScrollView>
     </View>

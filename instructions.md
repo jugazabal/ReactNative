@@ -164,6 +164,45 @@ npm install --save-dev eslint @babel/eslint-parser eslint-plugin-react eslint-pl
 - [ ] Add form validation
 - [ ] Optimize performance
 
+### Phase 7: Testing & Quality Assurance
+- [x] Install and configure Jest with `jest-expo`
+- [x] Extend ESLint with `eslint-plugin-jest`
+- [x] Create global test setup in `setupTests.js`
+- [x] Establish test directory structure (eg. `src/__tests__` or colocated `.test.jsx` files)
+- [x] Add baseline smoke test to verify configuration
+- [x] Implement component tests for `RepositoryListContainer` (exercise 10.17)
+- [x] Implement form submission test for `SignInContainer` (exercise 10.18)
+- [ ] Document testing conventions in project README or internal docs
+
+### Phase 8: Feature Extensions Roadmap
+- [x] **Single Repository View (10.19)**: Add route with detail view, reuse `RepositoryItem`, include GitHub link via Expo `Linking.openURL`.
+- [x] **Repository Review List (10.20)**: Fetch reviews, render with `FlatList` header + `ReviewItem`, format dates (eg. `date-fns`).
+- [x] **Create Review Form (10.21)**: Build Formik form with Yup validation, call `createReview`, navigate to created repository, expose tab for signed-in users.
+- [x] **Sign Up Flow (10.22)**: Implement registration form, call `createUser`, auto-sign-in using `useSignIn`, add app bar tab for guests.
+- [x] **Repository Sorting (10.23)**: Provide picker/menu control, wire to `useRepositories` variables (`orderBy`, `orderDirection`).
+- [x] **Repository Filtering (10.24)**: Add search input with debounced keyword (`use-debounce`), ensure header retains focus when used inside `FlatList`.
+- **My Reviews View (10.25)**: Extend `GET_CURRENT_USER` with `includeReviews` flag, render user reviews list with navigation options.
+- **Review Actions (10.26)**: Add buttons for opening repository and deleting review (with `Alert` confirmation and `deleteReview` mutation + refetch).
+- **Infinite Scrolling (10.27)**: Configure Apollo cache `typePolicies` with `relayStylePagination`, implement `fetchMore` flows for repositories and review lists, hook into `onEndReached`.
+
+### Supporting Implementation Steps
+- Update Apollo queries (`GET_REPOSITORY`, `GET_CURRENT_USER`) to accept new variables and include pagination fields (`pageInfo`, `edges.cursor`).
+- Introduce reusable UI primitives for buttons, lists, and typographic elements to keep new views consistent.
+- Ensure navigation updates (new routes, tabs) respect authentication context state and reset flows.
+- Add environment variable entries (eg. `APOLLO_URI`) required by new features to `.env.example` if shared.
+- Plan backend data seeding or mock scenarios to support automated tests covering reviews, users, and repositories.
+
+### Dependency Checklist for New Work
+```bash
+# Testing stack
+npm install --save-dev jest jest-expo eslint-plugin-jest
+npm install --save-dev --legacy-peer-deps react-test-renderer@18.2.0 @testing-library/react-native @testing-library/jest-native
+
+# Feature work utilities
+npm install date-fns use-debounce
+npm install expo-linking --legacy-peer-deps
+```
+
 ## Submission Requirements
 
 ### Repository Setup
