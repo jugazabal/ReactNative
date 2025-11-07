@@ -162,7 +162,7 @@ npm install --save-dev eslint @babel/eslint-parser eslint-plugin-react eslint-pl
 - [x] Add sorting and filtering
 - [x] Implement pagination *(repositories, single repository reviews, and user reviews)*
 - [x] Add form validation
-- [ ] Optimize performance
+- [x] Optimize performance
 
 ### Phase 7: Testing & Quality Assurance
 - [x] Install and configure Jest with `jest-expo`
@@ -172,13 +172,20 @@ npm install --save-dev eslint @babel/eslint-parser eslint-plugin-react eslint-pl
 - [x] Add baseline smoke test to verify configuration
 - [x] Implement component tests for `RepositoryListContainer` (exercise 10.17)
 - [x] Implement form submission test for `SignInContainer` (exercise 10.18)
-- [ ] Document testing conventions in project README or internal docs
+- [x] Document testing conventions in project README or internal docs
 
 #### Testing stack implementation notes
 - Install Jest tooling (`npm install --save-dev jest jest-expo eslint-plugin-jest`) and add the `"test": "jest"` script plus the `jest-expo` preset (with Babel transform/ignore rules) to `package.json`.
 - Extend eslint configuration with `plugin:jest/recommended` so test files lint cleanly alongside the app source.
 - Add React Native Testing Library support (`npm install --save-dev --legacy-peer-deps react-test-renderer@18.2.0 @testing-library/react-native @testing-library/jest-native`) and create `setupTests.js` that imports `@testing-library/jest-native/extend-expect`; register it via `jest.setupFilesAfterEnv`.
 - Mirror production structure in `src/__tests__` (eg. `components/`, `hooks/`) and favour user-centric queries (`screen.getByText`, `within`, `getAllByTestId`). Pair with `fireEvent` for interactions and `waitFor` when asserting async Formik submissions.
+
+### Testing conventions
+- Store specs under `src/__tests__`, mirroring the production folder layout (eg. `components/`, `hooks/`) so related files stay collocated.
+- Register shared matchers in `setupTests.js`; individual tests should import only React Testing Library helpers they use.
+- Prefer user-facing queries (`getByText`, `findByRole`, `within`) and rely on `waitFor` when asserting async Formik behaviour or network updates.
+- Run suites locally with `npm test -- --runInBand` for consistent ordering; omit the extra flag (`npm test`) for CI-friendly parallel execution.
+- Follow Arrange-Act-Assert and reset mocks (`afterEach(jest.clearAllMocks)`) to keep cases isolated.
 
 ### Phase 8: Feature Extensions Roadmap
 - [x] **Single Repository View (10.19)**: Add route with detail view, reuse `RepositoryItem`, include GitHub link via Expo `Linking.openURL`.
@@ -203,6 +210,12 @@ npm install --save-dev eslint @babel/eslint-parser eslint-plugin-react eslint-pl
 - Ensure list queries request `pageInfo { endCursor startCursor hasNextPage }` and propagate `first`/`after` variables from hooks/components.
 - In `useRepositories`/`useRepository` helpers, gate `fetchMore` behind `hasNextPage` and current `loading` state to avoid duplicate requests.
 - Use `FlatList.onEndReached` with a modest `onEndReachedThreshold` (≈0.5) and keep initial `first` small while testing to validate incremental loading behaviour.
+
+### Performance tuning checklist
+- Memoise expensive list items (`RepositoryItem`, `ReviewItem`) to avoid redundant renders when Apollo refreshes cache entries.
+- Stabilise list `renderItem` callbacks with `useCallback` and feed `FlatList` virtualization props (`initialNumToRender`, `windowSize`, `maxToRenderPerBatch`) for smoother scrolling.
+- Derive list data with `useMemo` in container screens so mapping over edges happens only when results actually change.
+- Keep navigation handlers and mutation callbacks memoised to prevent re-render cascades through props.
 
 ### Dependency Checklist for New Work
 ```bash

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { FlatList, View, StyleSheet, TextInput } from 'react-native';
 import { useNavigate } from 'react-router-native';
 import { Picker } from '@react-native-picker/picker';
@@ -25,20 +25,29 @@ export const RepositoryListContainer = ({
     );
   }
 
-  const repositoryNodes = repositories
-    ? repositories.edges.map(edge => edge.node)
-    : [];
+  const repositoryNodes = useMemo(() => {
+    return repositories ? repositories.edges.map((edge) => edge.node) : [];
+  }, [repositories]);
+
+  const renderItem = useCallback(
+    ({ item }) => <RepositoryItem repository={item} onPress={onSelectRepository} />,
+    [onSelectRepository],
+  );
+
+  const keyExtractor = useCallback((item) => item.id, []);
 
   return (
     <FlatList
       data={repositoryNodes}
       ItemSeparatorComponent={ItemSeparator}
-      renderItem={({ item }) => (
-        <RepositoryItem repository={item} onPress={onSelectRepository} />
-      )}
-      keyExtractor={item => item.id}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
       onEndReached={onEndReach}
       onEndReachedThreshold={0.5}
+      initialNumToRender={8}
+      windowSize={4}
+      maxToRenderPerBatch={8}
+      removeClippedSubviews
       ListHeaderComponent={ListHeaderComponent}
       ListFooterComponent={ListFooterComponent}
     />
@@ -123,15 +132,18 @@ const RepositoryList = () => {
   });
   const navigate = useNavigate();
 
-  const handleRepositoryPress = (id) => {
-    navigate(`/repositories/${id}`);
-  };
+  const handleRepositoryPress = useCallback(
+    (id) => {
+      navigate(`/repositories/${id}`);
+    },
+    [navigate],
+  );
 
-  const handleEndReach = () => {
+  const handleEndReach = useCallback(() => {
     if (typeof fetchMore === 'function') {
       fetchMore();
     }
-  };
+  }, [fetchMore]);
 
   const isFetchingMore = networkStatus === 3;
 

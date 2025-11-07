@@ -1,3 +1,4 @@
+import { useMemo, useCallback } from 'react';
 import { Alert, FlatList, StyleSheet, View, ActivityIndicator } from 'react-native';
 import { useNavigate } from 'react-router-native';
 import ReviewItem from '../components/ReviewItem';
@@ -17,48 +18,71 @@ const MyReviews = () => {
   });
   const [deleteReview] = useDeleteReview();
 
-  const reviews = currentUser?.reviews?.edges?.map((edge) => edge.node) ?? [];
+  const reviews = useMemo(() => {
+    return currentUser?.reviews?.edges?.map((edge) => edge.node) ?? [];
+  }, [currentUser]);
   const isFetchingMore = networkStatus === 3;
 
-  const handleViewRepository = (repositoryId) => {
-    if (!repositoryId) {
-      return;
-    }
+  const renderReviewItem = useCallback(
+    ({ item }) => (
+      <ReviewItem
+        review={item}
+        title={item.repository?.fullName}
+        showActions
+        onViewRepository={handleViewRepository}
+        onDeleteReview={handleDeleteReview}
+      />
+    ),
+    [handleViewRepository, handleDeleteReview],
+  );
 
-    navigate(`/repositories/${repositoryId}`);
-  };
+  const keyExtractor = useCallback((item) => item.id, []);
 
-  const handleDeleteReview = (reviewId) => {
-    if (!reviewId) {
-      return;
-    }
+  const handleViewRepository = useCallback(
+    (repositoryId) => {
+      if (!repositoryId) {
+        return;
+      }
 
-    Alert.alert(
-      'Delete review',
-      'Are you sure you want to delete this review?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteReview(reviewId);
-              await refetch();
-            } catch (error) {
-              console.log('Failed to delete review:', error.message);
-            }
+      navigate(`/repositories/${repositoryId}`);
+    },
+    [navigate],
+  );
+
+  const handleDeleteReview = useCallback(
+    (reviewId) => {
+      if (!reviewId) {
+        return;
+      }
+
+      Alert.alert(
+        'Delete review',
+        'Are you sure you want to delete this review?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await deleteReview(reviewId);
+                await refetch();
+              } catch (error) {
+                console.log('Failed to delete review:', error.message);
+              }
+            },
           },
-        },
-      ],
-    );
-  };
+        ],
+      );
+    },
+    [deleteReview, refetch],
+  );
 
-  const handleEndReach = () => {
+  const handleEndReach = useCallback(() => {
     if (typeof fetchMore === 'function') {
       fetchMore();
     }
-  };
+  }, [fetchMore]);
 
   if (loading && reviews.length === 0) {
     return (
@@ -73,18 +97,14 @@ const MyReviews = () => {
     <FlatList
       data={reviews}
       ItemSeparatorComponent={ItemSeparator}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <ReviewItem
-          review={item}
-          title={item.repository?.fullName}
-          showActions
-          onViewRepository={() => handleViewRepository(item.repositoryId)}
-          onDeleteReview={() => handleDeleteReview(item.id)}
-        />
-      )}
+      renderItem={renderReviewItem}
+      keyExtractor={keyExtractor}
       onEndReached={handleEndReach}
       onEndReachedThreshold={0.5}
+      initialNumToRender={6}
+      windowSize={4}
+      maxToRenderPerBatch={6}
+      removeClippedSubviews
       ListEmptyComponent={
         !loading ? (
           <View style={styles.emptyState}>

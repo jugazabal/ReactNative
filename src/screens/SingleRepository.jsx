@@ -1,3 +1,4 @@
+import { useMemo, useCallback } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
 import * as Linking from 'expo-linking';
 import { useParams } from 'react-router-native';
@@ -20,16 +21,18 @@ const SingleRepository = () => {
   });
 
   const repository = data?.repository;
-  const reviewNodes = repository?.reviews?.edges?.map((edge) => edge.node) ?? [];
+  const reviewNodes = useMemo(() => {
+    return repository?.reviews?.edges?.map((edge) => edge.node) ?? [];
+  }, [repository]);
   const isFetchingMore = networkStatus === 3;
 
-  const handleOpenInGitHub = () => {
+  const handleOpenInGitHub = useCallback(() => {
     if (repository?.url) {
       Linking.openURL(repository.url);
     }
-  };
+  }, [repository?.url]);
 
-  const handleFetchMore = () => {
+  const handleFetchMore = useCallback(() => {
     const pageInfo = repository?.reviews?.pageInfo;
 
     if (!pageInfo?.hasNextPage || typeof fetchMore !== 'function' || loading) {
@@ -43,7 +46,7 @@ const SingleRepository = () => {
         after: pageInfo.endCursor,
       },
     });
-  };
+  }, [repository, fetchMore, loading, id]);
 
   if (loading && !repository) {
     return (

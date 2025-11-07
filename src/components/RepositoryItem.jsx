@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { View, StyleSheet, Image, Pressable } from 'react-native';
 import Text from './Text';
 import theme from '../theme';
@@ -116,4 +117,31 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RepositoryItem;
+const repositoryPropsAreEqual = (prevProps, nextProps) => {
+  const prevRepo = prevProps.repository;
+  const nextRepo = nextProps.repository;
+
+  if (prevRepo === nextRepo && prevProps.showOpenInGitHub === nextProps.showOpenInGitHub) {
+    return true;
+  }
+
+  if (!prevRepo || !nextRepo) {
+    return prevRepo === nextRepo;
+  }
+
+  return (
+    prevRepo.id === nextRepo.id &&
+    prevRepo.fullName === nextRepo.fullName &&
+    prevRepo.description === nextRepo.description &&
+    prevRepo.language === nextRepo.language &&
+    prevRepo.stargazersCount === nextRepo.stargazersCount &&
+    prevRepo.forksCount === nextRepo.forksCount &&
+    prevRepo.reviewCount === nextRepo.reviewCount &&
+    prevRepo.ratingAverage === nextRepo.ratingAverage &&
+    prevRepo.ownerAvatarUrl === nextRepo.ownerAvatarUrl &&
+    prevRepo.url === nextRepo.url &&
+    prevProps.showOpenInGitHub === nextProps.showOpenInGitHub
+  );
+};
+
+export default memo(RepositoryItem, repositoryPropsAreEqual);

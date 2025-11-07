@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { format } from 'date-fns';
 import Text from './Text';
@@ -126,5 +127,28 @@ const styles = StyleSheet.create({
     color: 'white',
   },
 });
+const reviewPropsAreEqual = (prevProps, nextProps) => {
+  const prevReview = prevProps.review;
+  const nextReview = nextProps.review;
 
-export default ReviewItem;
+  if (!prevReview || !nextReview) {
+    return prevReview === nextReview;
+  }
+
+  const reviewEqual =
+    prevReview.id === nextReview.id &&
+    prevReview.text === nextReview.text &&
+    prevReview.rating === nextReview.rating &&
+    prevReview.createdAt === nextReview.createdAt &&
+    prevReview.repositoryId === nextReview.repositoryId &&
+    (prevReview.user?.username ?? '') === (nextReview.user?.username ?? '') &&
+    (prevReview.repository?.fullName ?? '') === (nextReview.repository?.fullName ?? '');
+
+  return (
+    reviewEqual &&
+    prevProps.title === nextProps.title &&
+    prevProps.showActions === nextProps.showActions
+  );
+};
+
+export default memo(ReviewItem, reviewPropsAreEqual);
