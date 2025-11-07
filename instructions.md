@@ -174,6 +174,12 @@ npm install --save-dev eslint @babel/eslint-parser eslint-plugin-react eslint-pl
 - [x] Implement form submission test for `SignInContainer` (exercise 10.18)
 - [ ] Document testing conventions in project README or internal docs
 
+#### Testing stack implementation notes
+- Install Jest tooling (`npm install --save-dev jest jest-expo eslint-plugin-jest`) and add the `"test": "jest"` script plus the `jest-expo` preset (with Babel transform/ignore rules) to `package.json`.
+- Extend eslint configuration with `plugin:jest/recommended` so test files lint cleanly alongside the app source.
+- Add React Native Testing Library support (`npm install --save-dev --legacy-peer-deps react-test-renderer@18.2.0 @testing-library/react-native @testing-library/jest-native`) and create `setupTests.js` that imports `@testing-library/jest-native/extend-expect`; register it via `jest.setupFilesAfterEnv`.
+- Mirror production structure in `src/__tests__` (eg. `components/`, `hooks/`) and favour user-centric queries (`screen.getByText`, `within`, `getAllByTestId`). Pair with `fireEvent` for interactions and `waitFor` when asserting async Formik submissions.
+
 ### Phase 8: Feature Extensions Roadmap
 - [x] **Single Repository View (10.19)**: Add route with detail view, reuse `RepositoryItem`, include GitHub link via Expo `Linking.openURL`.
 - [x] **Repository Review List (10.20)**: Fetch reviews, render with `FlatList` header + `ReviewItem`, format dates (eg. `date-fns`).
@@ -181,9 +187,9 @@ npm install --save-dev eslint @babel/eslint-parser eslint-plugin-react eslint-pl
 - [x] **Sign Up Flow (10.22)**: Implement registration form, call `createUser`, auto-sign-in using `useSignIn`, add app bar tab for guests.
 - [x] **Repository Sorting (10.23)**: Provide picker/menu control, wire to `useRepositories` variables (`orderBy`, `orderDirection`).
 - [x] **Repository Filtering (10.24)**: Add search input with debounced keyword (`use-debounce`), ensure header retains focus when used inside `FlatList`.
-- **My Reviews View (10.25)**: Extend `GET_CURRENT_USER` with `includeReviews` flag, render user reviews list with navigation options.
-- **Review Actions (10.26)**: Add buttons for opening repository and deleting review (with `Alert` confirmation and `deleteReview` mutation + refetch).
-- **Infinite Scrolling (10.27)**: Configure Apollo cache `typePolicies` with `relayStylePagination`, implement `fetchMore` flows for repositories and review lists, hook into `onEndReached`.
+- **My Reviews View (10.25)**: Enhance `GET_CURRENT_USER` with an `includeReviews` directive parameter, lazy-load the current user’s reviews, and expose them behind an authenticated “My reviews” app bar tab backed by a dedicated screen.
+- **Review Actions (10.26)**: Add contextual buttons per review — one to navigate to the repository detail, another to delete the review after `Alert.alert` confirmation — and wire up the `deleteReview` mutation with a post-delete `refetch`.
+- **Infinite Scrolling (10.27)**: Introduce cursor-based pagination (`first`/`after` vars) plus Apollo `relayStylePagination` cache policies, then invoke `fetchMore` from `onEndReached` for both the main repository feed and per-repository review lists.
 
 ### Supporting Implementation Steps
 - Update Apollo queries (`GET_REPOSITORY`, `GET_CURRENT_USER`) to accept new variables and include pagination fields (`pageInfo`, `edges.cursor`).
@@ -191,6 +197,12 @@ npm install --save-dev eslint @babel/eslint-parser eslint-plugin-react eslint-pl
 - Ensure navigation updates (new routes, tabs) respect authentication context state and reset flows.
 - Add environment variable entries (eg. `APOLLO_URI`) required by new features to `.env.example` if shared.
 - Plan backend data seeding or mock scenarios to support automated tests covering reviews, users, and repositories.
+
+### Pagination & infinite scrolling playbook
+- Configure `InMemoryCache` with `typePolicies` (`Query.repositories`, `Repository.reviews`) using `relayStylePagination()` to merge result pages seamlessly.
+- Ensure list queries request `pageInfo { endCursor startCursor hasNextPage }` and propagate `first`/`after` variables from hooks/components.
+- In `useRepositories`/`useRepository` helpers, gate `fetchMore` behind `hasNextPage` and current `loading` state to avoid duplicate requests.
+- Use `FlatList.onEndReached` with a modest `onEndReachedThreshold` (≈0.5) and keep initial `first` small while testing to validate incremental loading behaviour.
 
 ### Dependency Checklist for New Work
 ```bash
