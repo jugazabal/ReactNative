@@ -4,6 +4,7 @@ import { Route, Routes, Navigate } from 'react-router-native';
 import RepositoryList from '../screens/RepositoryList';
 import SingleRepository from '../screens/SingleRepository';
 import CreateReview from '../screens/CreateReview';
+import MyReviews from '../screens/MyReviews';
 import AppBar from './AppBar';
 import SignIn from './SignIn';
 import SignUp from './SignUp';
@@ -26,6 +27,7 @@ const Main = () => {
         <Route path="/" element={<RepositoryList />} />
         <Route path="/repositories/:id" element={<SingleRepository />} />
         <Route path="/create-review" element={<CreateReview />} />
+        <Route path="/my-reviews" element={<MyReviews />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="*" element={<Navigate to="/" replace />} />

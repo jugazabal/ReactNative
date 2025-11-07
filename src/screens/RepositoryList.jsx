@@ -15,6 +15,7 @@ export const RepositoryListContainer = ({
   onEndReach,
   onSelectRepository,
   ListHeaderComponent,
+  ListFooterComponent,
 }) => {
   if (loading) {
     return (
@@ -39,6 +40,7 @@ export const RepositoryListContainer = ({
       onEndReached={onEndReach}
       onEndReachedThreshold={0.5}
       ListHeaderComponent={ListHeaderComponent}
+      ListFooterComponent={ListFooterComponent}
     />
   );
 };
@@ -115,17 +117,29 @@ const RepositoryList = () => {
     };
   }, [sortingVariables, debouncedSearchQuery]);
 
-  const { repositories, loading } = useRepositories(repositoryVariables);
+  const { repositories, loading, fetchMore, networkStatus } = useRepositories({
+    ...repositoryVariables,
+    first: 8,
+  });
   const navigate = useNavigate();
 
   const handleRepositoryPress = (id) => {
     navigate(`/repositories/${id}`);
   };
 
+  const handleEndReach = () => {
+    if (typeof fetchMore === 'function') {
+      fetchMore();
+    }
+  };
+
+  const isFetchingMore = networkStatus === 3;
+
   return (
     <RepositoryListContainer
       repositories={repositories}
       loading={loading}
+      onEndReach={handleEndReach}
       onSelectRepository={handleRepositoryPress}
       ListHeaderComponent={() => (
         <RepositoryListHeader
@@ -135,6 +149,13 @@ const RepositoryList = () => {
           onChangeSearch={setSearchQuery}
         />
       )}
+      ListFooterComponent={
+        isFetchingMore ? (
+          <View style={styles.footerLoading}>
+            <Text>Loading more repositories…</Text>
+          </View>
+        ) : null
+      }
     />
   );
 };
@@ -161,6 +182,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+  },
+  footerLoading: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
 });
 

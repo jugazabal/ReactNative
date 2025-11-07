@@ -139,29 +139,29 @@ npm install --save-dev eslint @babel/eslint-parser eslint-plugin-react eslint-pl
 - [x] Style with React Native components
 
 ### Phase 3: Server Communication Setup
-- [ ] Set up rate-repository-api server
-- [ ] Configure HTTP requests with Fetch API
-- [ ] Set up GraphQL and Apollo Client
-- [ ] Configure environment variables
-- [ ] Implement data storage (AsyncStorage)
+- [x] Set up rate-repository-api server
+- [ ] Configure HTTP requests with Fetch API *(superseded by GraphQL workflow)*
+- [x] Set up GraphQL and Apollo Client
+- [x] Configure environment variables
+- [x] Implement data storage (AsyncStorage)
 
 ### Phase 4: Data Management
-- [ ] Replace mock data with server data
-- [ ] Implement repository data fetching with GraphQL
-- [ ] Add state management (Context/Redux)
-- [ ] Handle loading and error states
+- [x] Replace mock data with server data *(retains mock fallback for offline testing)*
+- [x] Implement repository data fetching with GraphQL
+- [x] Add state management (Context/Redux)
+- [x] Handle loading and error states
 
 ### Phase 5: User Authentication
-- [ ] Implement sign-in mutation
-- [ ] Store access tokens securely
-- [ ] Enhance Apollo Client with authentication
-- [ ] Implement sign-out functionality
-- [ ] Add user context management
+- [x] Implement sign-in mutation
+- [x] Store access tokens securely
+- [x] Enhance Apollo Client with authentication
+- [x] Implement sign-out functionality
+- [x] Add user context management
 
 ### Phase 6: Advanced Features
-- [ ] Add sorting and filtering
-- [ ] Implement pagination
-- [ ] Add form validation
+- [x] Add sorting and filtering
+- [x] Implement pagination *(repositories, single repository reviews, and user reviews)*
+- [x] Add form validation
 - [ ] Optimize performance
 
 ### Phase 7: Testing & Quality Assurance
@@ -187,9 +187,9 @@ npm install --save-dev eslint @babel/eslint-parser eslint-plugin-react eslint-pl
 - [x] **Sign Up Flow (10.22)**: Implement registration form, call `createUser`, auto-sign-in using `useSignIn`, add app bar tab for guests.
 - [x] **Repository Sorting (10.23)**: Provide picker/menu control, wire to `useRepositories` variables (`orderBy`, `orderDirection`).
 - [x] **Repository Filtering (10.24)**: Add search input with debounced keyword (`use-debounce`), ensure header retains focus when used inside `FlatList`.
-- **My Reviews View (10.25)**: Enhance `GET_CURRENT_USER` with an `includeReviews` directive parameter, lazy-load the current user’s reviews, and expose them behind an authenticated “My reviews” app bar tab backed by a dedicated screen.
-- **Review Actions (10.26)**: Add contextual buttons per review — one to navigate to the repository detail, another to delete the review after `Alert.alert` confirmation — and wire up the `deleteReview` mutation with a post-delete `refetch`.
-- **Infinite Scrolling (10.27)**: Introduce cursor-based pagination (`first`/`after` vars) plus Apollo `relayStylePagination` cache policies, then invoke `fetchMore` from `onEndReached` for both the main repository feed and per-repository review lists.
+- [x] **My Reviews View (10.25)**: Enhance `GET_CURRENT_USER` with an `includeReviews` directive parameter, lazy-load the current user’s reviews, and expose them behind an authenticated “My reviews” app bar tab backed by a dedicated screen.
+- [x] **Review Actions (10.26)**: Add contextual buttons per review — one to navigate to the repository detail, another to delete the review after `Alert.alert` confirmation — and wire up the `deleteReview` mutation with a post-delete `refetch`.
+- [x] **Infinite Scrolling (10.27)**: Introduce cursor-based pagination (`first`/`after` vars) plus Apollo `relayStylePagination` cache policies, then invoke `fetchMore` from `onEndReached` for both the main repository feed and per-repository review lists.
 
 ### Supporting Implementation Steps
 - Update Apollo queries (`GET_REPOSITORY`, `GET_CURRENT_USER`) to accept new variables and include pagination fields (`pageInfo`, `edges.cursor`).

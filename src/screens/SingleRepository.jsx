@@ -14,18 +14,35 @@ const REVIEWS_PAGE_SIZE = 10;
 
 const SingleRepository = () => {
   const { id } = useParams();
-  const { data, loading, error } = useQuery(GET_REPOSITORY, {
+  const { data, loading, error, fetchMore, networkStatus } = useQuery(GET_REPOSITORY, {
     variables: { id, first: REVIEWS_PAGE_SIZE },
     fetchPolicy: 'cache-and-network',
   });
 
   const repository = data?.repository;
   const reviewNodes = repository?.reviews?.edges?.map((edge) => edge.node) ?? [];
+  const isFetchingMore = networkStatus === 3;
 
   const handleOpenInGitHub = () => {
     if (repository?.url) {
       Linking.openURL(repository.url);
     }
+  };
+
+  const handleFetchMore = () => {
+    const pageInfo = repository?.reviews?.pageInfo;
+
+    if (!pageInfo?.hasNextPage || typeof fetchMore !== 'function' || loading) {
+      return;
+    }
+
+    fetchMore({
+      variables: {
+        id,
+        first: REVIEWS_PAGE_SIZE,
+        after: pageInfo.endCursor,
+      },
+    });
   };
 
   if (loading && !repository) {
@@ -78,6 +95,15 @@ const SingleRepository = () => {
             )
           : null
       }
+      onEndReached={handleFetchMore}
+      onEndReachedThreshold={0.5}
+      ListFooterComponent={
+        isFetchingMore ? (
+          <View style={styles.footerLoading}>
+            <ActivityIndicator size="small" color="#999999" />
+          </View>
+        ) : null
+      }
       contentContainerStyle={styles.listContent}
     />
   );
@@ -107,6 +133,9 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.repositoryItemBackground,
     padding: 16,
     alignItems: 'center',
+  },
+  footerLoading: {
+    paddingVertical: 16,
   },
 });
 

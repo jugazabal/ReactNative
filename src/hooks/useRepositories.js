@@ -106,15 +106,23 @@ const filterAndSortMockRepositories = (
 };
 
 const useRepositories = (options = {}) => {
-  const { orderBy, orderDirection, searchKeyword } = options;
+  const { orderBy, orderDirection, searchKeyword, first = 10 } = options;
 
   const variables = {
     orderBy,
     orderDirection,
     searchKeyword,
+    first,
   };
 
-  const { data, loading, error, refetch } = useQuery(GET_REPOSITORIES, {
+  const {
+    data,
+    loading,
+    error,
+    refetch,
+    fetchMore: apolloFetchMore,
+    networkStatus,
+  } = useQuery(GET_REPOSITORIES, {
     fetchPolicy: 'cache-and-network',
     errorPolicy: 'all', // Continue rendering even if there are GraphQL errors
     variables,
@@ -139,6 +147,23 @@ const useRepositories = (options = {}) => {
   return {
     repositories,
     loading,
+    networkStatus,
+    fetchMore: () => {
+      if (typeof apolloFetchMore !== 'function') {
+        return;
+      }
+
+      if (!data?.repositories?.pageInfo?.hasNextPage || loading) {
+        return;
+      }
+
+      apolloFetchMore({
+        variables: {
+          ...variables,
+          after: data.repositories.pageInfo.endCursor,
+        },
+      });
+    },
     refetch: (args) => refetch({ ...variables, ...args }),
   };
 };
